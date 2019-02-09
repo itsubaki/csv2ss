@@ -12,5 +12,5 @@ $ go get github.com/itsubaki/csv2ss
 ```
 $ export GOOGLE_CREDENTIALS_PATH=test/secret/credentials.json
 $ export GOOGLE_TOKEN_PATH=test/secret/token.json
-$ cat test/test.csv | csv2ss
+$ cat test/data.csv | csv2ss
 ```
