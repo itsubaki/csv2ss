@@ -5,8 +5,6 @@ csv to google spreadsheets
 
 ```
 $ go get github.com/itsubaki/csv2ss
-$ cd ${GOPATH}/src/github.com/itsubaki/csv2ss
-$ make
 ```
 
 ## Example
