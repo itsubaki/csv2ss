@@ -6,4 +6,4 @@ LDFLAGS := -X 'main.date=${DATE}' -X 'main.hash=${HASH}' -X 'main.goversion=${GO
 
 install:
 	-rm ${GOPATH}/bin/csv2ss
-	go install -ldflags "${LDFLAGS}" github.com/itsubaki/csv2ss/cmd/csv2ss
+	go install -ldflags "${LDFLAGS}" github.com/itsubaki/csv2ss
