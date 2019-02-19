@@ -89,6 +89,20 @@ func (ss *GoogleSS) NewSpreadSheets(name string) (*sheets.Spreadsheet, error) {
 	return res, nil
 }
 
+func (ss *GoogleSS) NewSheet(sheetsID, sheetname string) (*sheets.BatchUpdateSpreadsheetResponse, error) {
+	return ss.Service.Spreadsheets.BatchUpdate(sheetsID, &sheets.BatchUpdateSpreadsheetRequest{
+		Requests: []*sheets.Request{
+			&sheets.Request{
+				AddSheet: &sheets.AddSheetRequest{
+					Properties: &sheets.SheetProperties{
+						Title: sheetname,
+					},
+				},
+			},
+		},
+	}).Do()
+}
+
 func (ss *GoogleSS) Update(sheetsID, range_ string, value *sheets.ValueRange) (*sheets.UpdateValuesResponse, error) {
 	return ss.Service.Spreadsheets.Values.Update(sheetsID, range_, value).ValueInputOption("RAW").Do()
 }

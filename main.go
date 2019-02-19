@@ -8,17 +8,50 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/itsubaki/csv2ss/internal/googless"
+	"github.com/urfave/cli"
 	sheets "google.golang.org/api/sheets/v4"
 )
 
 func main() {
+	if err := New().Run(os.Args); err != nil {
+		panic(err)
+	}
+}
+
+func New() *cli.App {
+	app := cli.NewApp()
+
+	app.Name = "csv2ss"
+	app.Usage = "csv to google spreadsheets"
+	app.Action = Action
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name: "spreadsheetname, ssn",
+		},
+		cli.StringFlag{
+			Name:  "sheetname, sn",
+			Value: "シート1",
+		},
+	}
+
+	return app
+}
+
+func Action(c *cli.Context) {
 	values, err := Read()
 	if err != nil {
 		fmt.Printf("read: %v\n", err)
 		return
 	}
 
-	ss, res, err := Write(values)
+	ssname := c.String("spreadsheetname")
+	sname := c.String("sheetname")
+
+	if len(ssname) < 1 {
+		ssname = uuid.Must(uuid.NewRandom()).String()
+	}
+
+	ss, res, err := Write(ssname, sname, values)
 	if err != nil {
 		fmt.Printf("write: %v\n", err)
 		return
@@ -26,7 +59,6 @@ func main() {
 
 	fmt.Println(ss)
 	fmt.Println(res)
-	return
 }
 
 func Read() (*sheets.ValueRange, error) {
@@ -38,7 +70,7 @@ func Read() (*sheets.ValueRange, error) {
 
 	tmp := [][]string{}
 	for _, line := range csv {
-		tmp = append(tmp, strings.Split(line, ", "))
+		tmp = append(tmp, strings.Split(line, ","))
 	}
 
 	// string -> interface{}
@@ -55,19 +87,24 @@ func Read() (*sheets.ValueRange, error) {
 	}, nil
 }
 
-func Write(values *sheets.ValueRange) (*sheets.Spreadsheet, *sheets.UpdateValuesResponse, error) {
+func Write(ssname, sname string, values *sheets.ValueRange) (*sheets.Spreadsheet, *sheets.UpdateValuesResponse, error) {
 	gss, derr := googless.Default()
 	if derr != nil {
 		return nil, nil, fmt.Errorf("new spreadsheets client: %v", derr)
 	}
 
-	id := uuid.Must(uuid.NewRandom())
-	ss, nerr := gss.NewSpreadSheets(id.String())
+	ss, nerr := gss.NewSpreadSheets(ssname)
 	if nerr != nil {
 		return nil, nil, fmt.Errorf("new spreadsheets: %v", nerr)
 	}
 
-	res, uerr := gss.Update(ss.SpreadsheetId, "シート1", values)
+	if sname != "シート1" {
+		if _, err := gss.NewSheet(ss.SpreadsheetId, sname); err != nil {
+			return nil, nil, fmt.Errorf("new sheet=%s: %v", sname, err)
+		}
+	}
+
+	res, uerr := gss.Update(ss.SpreadsheetId, sname, values)
 	if uerr != nil {
 		return ss, nil, fmt.Errorf("update sheet1: %v", uerr)
 	}
