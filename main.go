@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/itsubaki/csv2ss/internal/googless"
+	"github.com/itsubaki/csv2ss/googless"
 	"github.com/urfave/cli"
 	sheets "google.golang.org/api/sheets/v4"
 )
@@ -46,12 +47,11 @@ func Action(c *cli.Context) {
 
 	ssname := c.String("spreadsheetname")
 	sname := c.String("sheetname")
-
 	if len(ssname) < 1 {
 		ssname = uuid.Must(uuid.NewRandom()).String()
 	}
 
-	ss, res, err := Write(ssname, sname, values)
+	ss, res, err := Write(context.Background(), ssname, sname, values)
 	if err != nil {
 		fmt.Printf("write: %v\n", err)
 		return
@@ -62,7 +62,7 @@ func Action(c *cli.Context) {
 }
 
 func Read() (*sheets.ValueRange, error) {
-	stdin, err := ioutil.ReadAll(os.Stdin)
+	stdin, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return nil, fmt.Errorf("stdin: %v", err)
 	}
@@ -87,13 +87,13 @@ func Read() (*sheets.ValueRange, error) {
 	}, nil
 }
 
-func Write(ssname, sname string, values *sheets.ValueRange) (*sheets.Spreadsheet, *sheets.UpdateValuesResponse, error) {
+func Write(ctx context.Context, ssname, sname string, values *sheets.ValueRange) (*sheets.Spreadsheet, *sheets.UpdateValuesResponse, error) {
 	gss, derr := googless.Default()
 	if derr != nil {
 		return nil, nil, fmt.Errorf("new spreadsheets client: %v", derr)
 	}
 
-	ss, nerr := gss.NewSpreadSheets(ssname)
+	ss, nerr := gss.NewSpreadSheets(ctx, ssname)
 	if nerr != nil {
 		return nil, nil, fmt.Errorf("new spreadsheets: %v", nerr)
 	}
